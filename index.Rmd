@@ -1,0 +1,99 @@
+---
+title: "<font color=MediumSeaGreen >Shiny Application and Reproducible Pitch"
+author: "Juana Arroyo"
+date: "`r Sys.Date()`"
+output: ioslides_presentation
+---
+
+```{=html}
+<style>
+body, p { 
+  font-family: Computer Modern;
+}
+h1,h2,h3,h4,h5,h6{
+  font-family: Computer Modern;
+  color: MediumSeaGreen
+}
+ul{
+  font-family: Computer Modern;
+}
+.title-slide {
+    border: 5px gray solid;
+}
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+  background-color: 5px gray solid;
+}
+</style>
+```
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Shiny Application Assignment
+For this Assignments I used a Shinny Application to visualize the data from the the dataset state.x77, which has information related to the 50 states of the USA, the variables are:
+
+<ul style="font-size: 20px">
+<li>Population: population estimate as of July 1, 1975.</li>
+<li>Income: per capita income (1974).</li>
+<li>Illiteracy: illiteracy (1970, percent of population).</li>
+<li>Life Exp: life expectancy in years (1969--71).</li>
+<li>Murder: murder and non-negligent manslaughter rate per 100,000 population (1976).</li>
+<li>HS Grad: percent high-school graduates (1970).</li>
+<li>Frost: mean number of days with minimum temperature below freezing (1931--1960) in capital or large city.</li>
+<li>Area: land area in square miles.</li>
+</ul>
+
+Additionaly I used the dataset state.abb which includes a character vector of 2-letter with abbreviations for the state names.
+
+## Inputs
+The application has the inputs described below, these are located in the sidebar panel:
+
+-   selectInput: here the user can select which of the 8 variables to visualize in the map. Population is the default.
+-   checkboxInput for minimum value: when checked the state with the lowest value for the depicted variable and its value are shown in the main panel. Not checked as default.
+-   checkboxInput for maximum value: when checked the state with the highest value for the depicted variable and its value are shown in the main panel. Not checked as default.
+
+Additionally an event was created, when one of the states in the map is clicked a table under the map will show the value of all the variables for that state.
+
+## Outputs: Map
+
+The map is plotted using the package Plotly. The map is shown below, for this case I used the variable Population.
+
+```{r map, echo = FALSE, message=FALSE, warning=FALSE}
+library(plotly)
+library(knitr)
+states_info<-as.data.frame(state.x77)
+states_info$State <- rownames(states_info)
+rownames(states_info)<-NULL
+states_info <- states_info[,c(9, 1:8)]
+states_info$code <- state.abb
+variable<-"Population"
+title<-paste(variable, "in the USA")
+pos<-which(names(states_info)==variable)
+hover<-paste(states_info$State,'<br>', states_info[,pos])
+states_info$variable<-states_info[,pos]
+borders <- list(color=toRGB('black'))
+map_options<- list(
+  scope = "usa",
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+  )
+plot_ly(states_info)%>%add_trace(z=~variable,text=~hover,hoverinfo="text",locations=~code,type='choropleth',ids=~code,locationmode='USA-states',color=~variable,colors='Greens', marker=list(line=list(width=0)),source="A")%>%layout(title=title,geo = map_options)%>%colorbar(title = variable)
+```
+
+## Other outputs
+
+-   We can see the maximum and minimum value of the chosen variable according to the check boxes described in the inputs.
+-   We can see below the table generated for the state of California with the click event.
+
+```{r table, echo=TRUE, message=FALSE, warning=FALSE}
+library(kableExtra)
+table<-states_info%>%select(1:9)%>%filter(State == "California")
+kable(table, align=rep('c', 9),format = "html", center="c",
+      table.attr = "style = \"font-size: 15px;\"")%>%
+  column_spec(1:9,border_left = T, border_right = T)
+```
+</br>
+In [This GitHub repository](https://github.com/JuanaAM/shiny_application) you can find the files ui.R and server.R.
